@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f5f0">
+<title>Logic Proof Builder</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #f7f5f0;
+    margin: 0;
+    padding: 24px;
+    color: #2b2b2b;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; }
+  .subtitle { font-size: 14px; color: #6b6b6b; margin-bottom: 20px; }
+  .symbol-bar {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 10px; margin-bottom: 20px;
+  }
+  .symbol-btn {
+    font-family: 'Cambria Math', 'Georgia', serif;
+    font-size: 17px; background: #eef0f3; border: 1px solid #cfd3da;
+    border-radius: 6px; padding: 6px 12px; cursor: pointer;
+    transition: background 0.15s; color: #1a1a1a;
+  }
+  .symbol-btn:hover { background: #dfe4ea; }
+  .symbol-btn:active { background: #c7ceda; }
+  .goal-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+  .goal-box label {
+    display: block; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.03em; color: #8a8a8a; margin-bottom: 6px;
+  }
+  .goal-row { display: flex; align-items: center; gap: 10px; }
+  .goal-row input {
+    flex: 1; font-size: 16px; font-family: 'Cambria Math', 'Georgia', serif;
+    padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .hint2 { font-size: 12px; color: #999; margin-top: 8px; }
+  .step {
+    background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .step-row { display: flex; align-items: center; gap: 10px; }
+  .step .num { font-size: 13px; color: #9a9a9a; min-width: 20px; text-align: right; }
+  .step input.expr {
+    flex: 1; font-size: 16px; font-family: 'Cambria Math', 'Georgia', serif;
+    padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .step select.law {
+    width: 190px; font-size: 13px; padding: 8px 10px;
+    border: 1px solid #ccc; border-radius: 6px; color: #555;
+    background: #fff; font-family: 'Georgia', serif;
+  }
+  .step .remove { background: none; border: none; color: #b55; font-size: 18px; cursor: pointer; padding: 0 4px; }
+  .step .remove:hover { color: #d33; }
+  .active-target { outline: 2px solid #7a9bd1; }
+  .status-line {
+    margin-top: 8px; font-size: 13px; padding: 6px 10px;
+    border-radius: 5px; font-family: 'Georgia', serif; display: none;
+  }
+  .status-ok { background: #eaf6ec; color: #1e6b2e; display: block; }
+  .status-bad { background: #fbeaea; color: #a32323; display: block; }
+  .status-neutral { background: #f0f0f0; color: #777; display: block; }
+  .buttons-row { display: flex; gap: 10px; margin-top: 6px; margin-bottom: 26px; flex-wrap: wrap; }
+  .add-btn, .export-btn, .check-btn {
+    font-size: 14px; padding: 8px 16px; border-radius: 6px;
+    border: 1px solid #ccc; background: #fff; cursor: pointer;
+  }
+  .add-btn:hover, .export-btn:hover, .check-btn:hover { background: #f0f0f0; }
+  .export-btn { background: #2b4a7a; color: white; border: none; }
+  .export-btn:hover { background: #1f3760; }
+  .check-btn { background: #3a7a4a; color: white; border: none; }
+  .check-btn:hover { background: #2c5f38; }
+  .preview {
+    background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 16px 18px; font-family: 'Cambria Math', 'Georgia', serif;
+    font-size: 16px; line-height: 1.9; white-space: pre-wrap;
+  }
+  .preview-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: #8a8a8a; margin-bottom: 10px; font-family: 'Georgia', serif;
+  }
+  .overall-result {
+    margin-top: 16px; padding: 14px 16px; border-radius: 8px;
+    font-size: 15px; font-weight: 600; display: none;
+  }
+  .overall-ok { background: #eaf6ec; color: #1e6b2e; display: block; }
+  .overall-bad { background: #fbeaea; color: #a32323; display: block; }
+
+
+  /* ---------- Mobile / touch improvements ---------- */
+  html { -webkit-text-size-adjust: 100%; }
+  body { min-height: 100dvh; padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  button, select, input { touch-action: manipulation; }
+  input, select { font-size: 16px !important; } /* prevents iOS input zoom */
+  .symbol-btn { min-width: 44px; min-height: 44px; padding: 8px 12px; -webkit-user-select: none; user-select: none; }
+
+  @media (max-width: 640px) {
+    body { padding-top: 16px; }
+    h1 { font-size: 21px; }
+    .subtitle { line-height: 1.45; }
+    .symbol-bar { gap: 7px; padding: 9px; position: sticky; top: 0; z-index: 10; }
+    .symbol-btn { flex: 1 0 44px; }
+    .goal-box { padding: 12px; }
+    .goal-row { display: block; }
+    .goal-row input { width: 100%; min-height: 44px; }
+    .step { padding: 11px; }
+    .step-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 42px; gap: 8px; align-items: center; }
+    .step .num { grid-column: 1; grid-row: 1; }
+    .step input.expr { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: 44px; }
+    .step .remove { grid-column: 3; grid-row: 1; min-width: 42px; min-height: 44px; }
+    .step select.law { grid-column: 2 / 4; grid-row: 2; width: 100%; min-height: 44px; }
+    .buttons-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .buttons-row button { min-height: 46px; padding: 9px 10px; }
+    .export-btn { grid-column: 1 / -1; }
+    .preview { overflow-wrap: anywhere; font-size: 15px; }
+  }
+
+
+  /* ---------- Academic keyboard redesign ---------- */
+  :root {
+    --ink: #172033; --muted: #667085; --paper: #f4f1e9; --card: #fffdf8;
+    --line: #d8d2c5; --navy: #243b64; --navy2: #182a49; --key: #fbfaf6;
+    --keyline: #c9c3b8; --accent: #8c6a3d;
+  }
+  body {
+    font-family: ui-serif, Georgia, 'Times New Roman', serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(36,59,100,.07), transparent 30rem),
+      linear-gradient(180deg, #f7f4ed 0%, var(--paper) 100%);
+    color: var(--ink);
+  }
+  .container { max-width: 860px; }
+  h1 { font-family: ui-serif, Georgia, serif; font-size: 28px; letter-spacing: -.025em; color: var(--navy2); }
+  .subtitle { color: var(--muted); max-width: 720px; }
+  .goal-box, .step, .preview {
+    background: rgba(255,253,248,.96); border-color: var(--line); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(23,32,51,.04);
+  }
+  .goal-box label, .preview-title { color: var(--accent); font-weight: 700; letter-spacing: .08em; }
+  .goal-row input, .step input.expr, .step select.law {
+    border-color: #cfc8ba; background: #fff; color: var(--ink); border-radius: 9px;
+  }
+  .goal-row input:focus, .step input.expr:focus, .step select.law:focus {
+    outline: 3px solid rgba(36,59,100,.13); border-color: var(--navy);
+  }
+  .active-target { outline: 3px solid rgba(36,59,100,.16) !important; border-color: var(--navy) !important; }
+
+  .logic-keyboard {
+    background: #e9e5dc; border: 1px solid #cec7ba; border-radius: 16px;
+    padding: 10px; margin-bottom: 20px; box-shadow: 0 5px 16px rgba(23,32,51,.08);
+    -webkit-user-select: none; user-select: none;
+  }
+  .keyboard-head { display:flex; justify-content:space-between; align-items:center; gap:10px; padding: 1px 3px 8px; }
+  .keyboard-title { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; font-weight: 800; letter-spacing:.11em; text-transform:uppercase; color:#5d6470; }
+  .keyboard-hint { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; color:#7b8088; }
+  .symbol-bar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:7px; background:none; border:0; border-radius:0; padding:0; margin:0; position:static; }
+  .symbol-btn {
+    min-width:0; min-height:46px; padding:5px 2px; border:1px solid var(--keyline); border-bottom-width:2px;
+    border-radius:9px; background:var(--key); color:var(--ink); cursor:pointer;
+    font-family:'Cambria Math','STIX Two Math','Times New Roman',serif; font-size:19px; font-weight:600;
+    box-shadow:0 1px 1px rgba(23,32,51,.06); -webkit-tap-highlight-color:transparent;
+  }
+  .symbol-btn.letter-key { font-family:ui-serif,Georgia,serif; font-style:italic; }
+  .symbol-btn.logic-key { background:#f3f5f8; color:var(--navy2); border-color:#bcc5d2; }
+  .symbol-btn.utility-key { font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:15px; background:#dedbd3; }
+  .symbol-btn:active { transform:translateY(1px); background:#e3e7ee; border-bottom-width:1px; }
+  .check-btn { background:var(--navy); } .check-btn:hover { background:var(--navy2); }
+  .export-btn { background:#65513a; } .export-btn:hover { background:#4e3e2c; }
+  .add-btn, .export-btn, .check-btn { border-radius:9px; min-height:44px; font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-weight:650; }
+
+  @media (max-width:640px) {
+    h1 { font-size:25px; }
+    .logic-keyboard { position:sticky; top:6px; z-index:20; padding:8px; border-radius:14px; }
+    .symbol-bar { grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+    .symbol-btn { min-height:43px; font-size:18px; border-radius:8px; }
+    .keyboard-hint { display:none; }
+  }
+  @media (max-width:380px) {
+    .symbol-bar { gap:4px; }
+    .symbol-btn { min-height:42px; font-size:17px; }
+  }
+
+
+.practice-panel{background:rgba(255,253,248,.96);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
+.practice-top{display:flex;gap:12px;align-items:end;justify-content:space-between;flex-wrap:wrap}
+.practice-label{display:block;margin-bottom:6px;color:var(--accent);font:800 11px ui-sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.difficulty-select,.reroll-btn{min-height:44px;border-radius:9px;font-size:16px}
+.difficulty-select{min-width:180px;border:1px solid #cfc8ba;background:#fff;padding:8px 12px}
+.reroll-btn{border:0;background:var(--navy);color:#fff;padding:9px 16px;font-weight:750}
+.practice-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;font-family:ui-sans-serif}
+.difficulty-badge,.proof-counter{padding:5px 9px;border-radius:999px;background:#eef1f5;color:var(--navy2);font-size:12px;font-weight:750}
+.practice-note{color:var(--muted);font-size:12px;align-self:center}
+
+.difficulty-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:5px}
+.difficulty-btn{min-height:54px;border:1px solid #c9c3b8;border-radius:10px;background:#fff;color:var(--ink);font-weight:800;font-size:14px;cursor:pointer;padding:7px 8px;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.difficulty-btn span{display:block;font-size:10px;font-weight:600;color:var(--muted);margin-top:3px}
+.difficulty-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 2px 6px rgba(24,42,73,.18)}
+.difficulty-btn.active span{color:#e8edf5}
+.practice-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+.practice-note{margin-top:9px;line-height:1.4}
+.exercise-instruction{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#4b5565;margin-bottom:10px;font-weight:600}
+@media(max-width:480px){.difficulty-buttons{gap:5px}.difficulty-btn{font-size:12px;padding:6px 3px}.difficulty-btn span{font-size:9px}.practice-actions{align-items:center}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Logic Proof Builder</h1>
+  <div class="subtitle">Use the logic keyboard to build each expression. Pick the law for each step, then click "Check Proof" to verify both the logic AND whether the chosen law actually justifies that step.</div>
+
+  <div class="logic-keyboard" aria-label="Logic practice keyboard">
+    <div class="keyboard-head"><span class="keyboard-title">Logic keyboard</span><span class="keyboard-hint">Tap keys without leaving your expression</span></div>
+    <div class="symbol-bar" id="symbolBar">
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="p" aria-label="Insert p">p</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="q" aria-label="Insert q">q</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="r" aria-label="Insert r">r</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="s" aria-label="Insert s">s</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="t" aria-label="Insert t">t</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="u" aria-label="Insert u">u</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="v" aria-label="Insert v">v</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="w" aria-label="Insert w">w</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="x" aria-label="Insert x">x</button>
+      <button type="button" tabindex="-1" class="symbol-btn letter-key" data-sym="y" aria-label="Insert y">y</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="¬" aria-label="Insert ¬">¬</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="∧" aria-label="Insert ∧">∧</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="∨" aria-label="Insert ∨">∨</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="→" aria-label="Insert →">→</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="↔" aria-label="Insert ↔">↔</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="⊕" aria-label="Insert ⊕">⊕</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="≡" aria-label="Insert ≡">≡</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="(" aria-label="Insert (">(</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym=")" aria-label="Insert )">)</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="T" aria-label="Insert T">T</button>
+      <button type="button" tabindex="-1" class="symbol-btn logic-key" data-sym="F" aria-label="Insert F">F</button>
+      <button type="button" tabindex="-1" class="symbol-btn utility-key" data-action="backspace" aria-label="Backspace">⌫</button>
+      <button type="button" tabindex="-1" class="symbol-btn utility-key" data-action="space" aria-label="Insert space">space</button>
+    </div>
+  </div>
+
+
+<div class="practice-panel">
+ <div class="practice-label">Practice difficulty</div>
+ <div class="difficulty-buttons" role="group" aria-label="Practice difficulty">
+   <button type="button" class="difficulty-btn" data-difficulty="moderate">Moderate<span>2–4 moves</span></button>
+   <button type="button" class="difficulty-btn active" data-difficulty="hard">Hard<span>4–6 moves</span></button>
+   <button type="button" class="difficulty-btn" data-difficulty="extreme">Extreme<span>6–9 moves</span></button>
+ </div>
+ <div class="practice-actions">
+   <div class="practice-meta"><span id="difficultyBadge" class="difficulty-badge">Hard</span><span id="proofCounter" class="proof-counter">Problem #1</span></div>
+   <button type="button" id="rerollBtn" class="reroll-btn">↻ New Problem</button>
+ </div>
+ <div class="practice-note">Procedurally generated practice — varied but compact. T/F, short targets, nested laws, and operator structures are randomized without making expressions unnecessarily huge.</div>
+</div>
+  <div class="goal-box">
+    <div class="exercise-instruction">Rewrite the expression using one equivalence law per step until it matches the expression on the right.</div>
+    <label>Statement to prove (left ≡ right)</label>
+    <div class="goal-row">
+      <input type="text" id="goalInput" class="focustrack" readonly aria-readonly="true">
+    </div>
+    <div class="hint2">Variables must be single letters (t, p, e, q, r, s...). Use T and F for true/false constants. Each step should apply ONE law to ONE part of the expression.</div>
+  </div>
+
+  <div id="stepsContainer"></div>
+
+  <div class="buttons-row">
+    <button class="add-btn" id="addStep">+ Add step</button>
+    <button class="check-btn" id="checkBtn">✓ Check Proof</button>
+    <button class="export-btn" id="exportBtn">Show full proof below</button>
+  </div>
+
+  <div class="overall-result" id="overallResult"></div>
+
+  <div class="preview" id="preview">
+    <div class="preview-title">Your proof</div>
+    <div id="previewContent">Nothing yet — add steps above and click "Show full proof".</div>
+  </div>
+</div>
+
+<script>
+/* ---------- Parser for propositional logic ---------- */
+function tokenize(str) {
+  const tokens = [];
+  let i = 0;
+  while (i < str.length) {
+    const c = str[i];
+    if (/\s/.test(c)) { i++; continue; }
+    if ('¬∧∨→↔⊕()'.includes(c)) { tokens.push(c); i++; continue; }
+    if (c === 'T' || c === 'F') { tokens.push(c); i++; continue; }
+    if (/[a-zA-Z]/.test(c)) { tokens.push({v: c}); i++; continue; }
+    throw new Error('Unrecognized character: "' + c + '"');
+  }
+  return tokens;
+}
+
+function parseExpr(str) {
+  const tokens = tokenize(str);
+  let pos = 0;
+  function peek() { return tokens[pos]; }
+  function next() { return tokens[pos++]; }
+
+  function parseBiconditional() {
+    let left = parseImplication();
+    while (peek() === '↔') { next(); const right = parseImplication(); left = {type:'iff', a:left, b:right}; }
+    return left;
+  }
+  function parseImplication() {
+    let left = parseXor();
+    if (peek() === '→') { next(); const right = parseImplication(); left = {type:'imp', a:left, b:right}; }
+    return left;
+  }
+  function parseXor() {
+    let left = parseOr();
+    while (peek() === '⊕') { next(); const right = parseOr(); left = {type:'xor', a:left, b:right}; }
+    return left;
+  }
+  function parseOr() {
+    let left = parseAnd();
+    while (peek() === '∨') { next(); const right = parseAnd(); left = {type:'or', a:left, b:right}; }
+    return left;
+  }
+  function parseAnd() {
+    let left = parseNot();
+    while (peek() === '∧') { next(); const right = parseNot(); left = {type:'and', a:left, b:right}; }
+    return left;
+  }
+  function parseNot() {
+    if (peek() === '¬') { next(); return {type:'not', a: parseNot()}; }
+    return parsePrimary();
+  }
+  function parsePrimary() {
+    const t = peek();
+    if (t === '(') {
+      next();
+      const inner = parseBiconditional();
+      if (peek() !== ')') throw new Error('Missing closing parenthesis');
+      next();
+      return inner;
+    }
+    if (t === 'T') { next(); return {type:'const', val:true}; }
+    if (t === 'F') { next(); return {type:'const', val:false}; }
+    if (t && typeof t === 'object' && 'v' in t) { next(); return {type:'var', name:t.v}; }
+    throw new Error('Unexpected token near position ' + pos);
+  }
+
+  if (tokens.length === 0) throw new Error('Empty expression');
+  const result = parseBiconditional();
+  if (pos !== tokens.length) throw new Error('Unexpected extra input after expression');
+  return result;
+}
+
+function collectVars(node, set) {
+  if (!node) return set;
+  if (node.type === 'var') { set.add(node.name); return set; }
+  if (node.type === 'const') return set;
+  if (node.type === 'not') { collectVars(node.a, set); return set; }
+  collectVars(node.a, set); collectVars(node.b, set);
+  return set;
+}
+
+function evalNode(node, assign) {
+  switch (node.type) {
+    case 'const': return node.val;
+    case 'var': return !!assign[node.name];
+    case 'not': return !evalNode(node.a, assign);
+    case 'and': return evalNode(node.a, assign) && evalNode(node.b, assign);
+    case 'or': return evalNode(node.a, assign) || evalNode(node.b, assign);
+    case 'imp': return (!evalNode(node.a, assign)) || evalNode(node.b, assign);
+    case 'iff': return evalNode(node.a, assign) === evalNode(node.b, assign);
+    case 'xor': return evalNode(node.a, assign) !== evalNode(node.b, assign);
+  }
+  throw new Error('Unknown node type');
+}
+
+function allAssignments(vars) {
+  const varList = Array.from(vars);
+  const n = varList.length;
+  const results = [];
+  const total = Math.pow(2, n);
+  for (let mask = 0; mask < total; mask++) {
+    const assign = {};
+    varList.forEach((v, idx) => { assign[v] = !!(mask & (1 << idx)); });
+    results.push(assign);
+  }
+  return results;
+}
+
+function checkEquivalent(nodeA, nodeB) {
+  const vars = new Set();
+  collectVars(nodeA, vars);
+  collectVars(nodeB, vars);
+  const assigns = allAssignments(vars);
+  for (const assign of assigns) {
+    const va = evalNode(nodeA, assign);
+    const vb = evalNode(nodeB, assign);
+    if (va !== vb) return {equivalent: false, counterexample: assign, valA: va, valB: vb};
+  }
+  return {equivalent: true};
+}
+
+function fmtAssign(assign) {
+  return Object.keys(assign).sort().map(k => k + '=' + (assign[k] ? 'T' : 'F')).join(', ');
+}
+
+/* ---------- Structural equality & tree diff ---------- */
+function eq(a, b) {
+  if (a.type !== b.type) return false;
+  if (a.type === 'var') return a.name === b.name;
+  if (a.type === 'const') return a.val === b.val;
+  if (a.type === 'not') return eq(a.a, b.a);
+  return eq(a.a, b.a) && eq(a.b, b.b);
+}
+
+// Finds the smallest pair of corresponding subtrees where a and b diverge.
+function diffLocate(a, b) {
+  if (eq(a, b)) return {same: true};
+  if (a.type !== b.type) return {A: a, B: b};
+  if (a.type === 'var' || a.type === 'const') return {A: a, B: b};
+  if (a.type === 'not') return diffLocate(a.a, b.a);
+  const leftEq = eq(a.a, b.a);
+  const rightEq = eq(a.b, b.b);
+  if (leftEq && !rightEq) return diffLocate(a.b, b.b);
+  if (!leftEq && rightEq) return diffLocate(a.a, b.a);
+  // both differ (or neither differs, which is impossible since !eq(a,b) already) -> attribute to whole node
+  return {A: a, B: b};
+}
+
+/* ---------- Law pattern matching ---------- */
+const W = id => ({type:'wild', id});
+const C = val => ({type:'const', val});
+const NOT = x => ({type:'not', a:x});
+const AND = (x,y) => ({type:'and', a:x, b:y});
+const OR = (x,y) => ({type:'or', a:x, b:y});
+const IMP = (x,y) => ({type:'imp', a:x, b:y});
+const IFF = (x,y) => ({type:'iff', a:x, b:y});
+
+function matchPattern(pattern, concrete, bindings) {
+  if (pattern.type === 'wild') {
+    if (Object.prototype.hasOwnProperty.call(bindings, pattern.id)) {
+      return eq(bindings[pattern.id], concrete);
+    }
+    bindings[pattern.id] = concrete;
+    return true;
+  }
+  if (pattern.type === 'const') return concrete.type === 'const' && concrete.val === pattern.val;
+  if (pattern.type !== concrete.type) return false;
+  if (pattern.type === 'not') return matchPattern(pattern.a, concrete.a, bindings);
+  return matchPattern(pattern.a, concrete.a, bindings) && matchPattern(pattern.b, concrete.b, bindings);
+}
+
+const LAW_RULES = {
+  "Idempotent law": [
+    [OR(W('P'), W('P')), W('P')],
+    [AND(W('P'), W('P')), W('P')]
+  ],
+  "Associative law": [
+    [OR(OR(W('P'), W('Q')), W('R')), OR(W('P'), OR(W('Q'), W('R')))],
+    [AND(AND(W('P'), W('Q')), W('R')), AND(W('P'), AND(W('Q'), W('R')))]
+  ],
+  "Commutative law": [
+    [OR(W('P'), W('Q')), OR(W('Q'), W('P'))],
+    [AND(W('P'), W('Q')), AND(W('Q'), W('P'))]
+  ],
+  "Distributive law": [
+    [OR(W('P'), AND(W('Q'), W('R'))), AND(OR(W('P'), W('Q')), OR(W('P'), W('R')))],
+    [AND(W('P'), OR(W('Q'), W('R'))), OR(AND(W('P'), W('Q')), AND(W('P'), W('R')))]
+  ],
+  "Identity law": [
+    [OR(W('P'), C(false)), W('P')],
+    [AND(W('P'), C(true)), W('P')]
+  ],
+  "Domination law": [
+    [AND(W('P'), C(false)), C(false)],
+    [OR(W('P'), C(true)), C(true)]
+  ],
+  "Double negation law": [
+    [NOT(NOT(W('P'))), W('P')]
+  ],
+  "Complement law": [
+    [AND(W('P'), NOT(W('P'))), C(false)],
+    [OR(W('P'), NOT(W('P'))), C(true)],
+    [NOT(C(true)), C(false)],
+    [NOT(C(false)), C(true)]
+  ],
+  "De Morgan's law": [
+    [NOT(OR(W('P'), W('Q'))), AND(NOT(W('P')), NOT(W('Q')))],
+    [NOT(AND(W('P'), W('Q'))), OR(NOT(W('P')), NOT(W('Q')))]
+  ],
+  "Absorption law": [
+    [OR(W('P'), AND(W('P'), W('Q'))), W('P')],
+    [AND(W('P'), OR(W('P'), W('Q'))), W('P')]
+  ],
+  "Conditional identity": [
+    [IMP(W('P'), W('Q')), OR(NOT(W('P')), W('Q'))],
+    [IFF(W('P'), W('Q')), AND(IMP(W('P'), W('Q')), IMP(W('Q'), W('P')))]
+  ]
+};
+
+function checkLawApplies(lawName, A, B) {
+  const rules = LAW_RULES[lawName];
+  if (!rules) return false;
+  for (const [pat1, pat2] of rules) {
+    let b1 = {};
+    if (matchPattern(pat1, A, b1) && matchPattern(pat2, B, b1)) return true;
+    let b2 = {};
+    if (matchPattern(pat2, A, b2) && matchPattern(pat1, B, b2)) return true;
+  }
+  return false;
+}
+
+/* ---------- Pretty printer (for explanation messages) ---------- */
+function nodeToStr(node) {
+  switch (node.type) {
+    case 'const': return node.val ? 'T' : 'F';
+    case 'var': return node.name;
+    case 'not': return '¬' + wrapIfNeeded(node.a);
+    case 'and': return nodeToStr(node.a) + '∧' + nodeToStr(node.b);
+    case 'or': return nodeToStr(node.a) + '∨' + nodeToStr(node.b);
+    case 'imp': return nodeToStr(node.a) + '→' + nodeToStr(node.b);
+    case 'iff': return nodeToStr(node.a) + '↔' + nodeToStr(node.b);
+    case 'xor': return nodeToStr(node.a) + '⊕' + nodeToStr(node.b);
+  }
+  return '?';
+}
+function wrapIfNeeded(node) {
+  if (node.type === 'var' || node.type === 'const' || node.type === 'not') return nodeToStr(node);
+  return '(' + nodeToStr(node) + ')';
+}
+
+/* ---------- UI wiring ---------- */
+const LAWS = [
+  "Select a law...",
+  "Idempotent law",
+  "Associative law",
+  "Commutative law",
+  "Distributive law",
+  "Identity law",
+  "Domination law",
+  "Double negation law",
+  "Complement law",
+  "De Morgan's law",
+  "Absorption law",
+  "Conditional identity"
+];
+
+let lastFocused = document.getElementById('goalInput');
+
+function makeStep(exprVal = '', lawVal = '') {
+  const container = document.getElementById('stepsContainer');
+  const row = document.createElement('div');
+  row.className = 'step';
+
+  const stepRow = document.createElement('div');
+  stepRow.className = 'step-row';
+
+  const num = document.createElement('div');
+  num.className = 'num';
+  stepRow.appendChild(num);
+
+  const exprInput = document.createElement('input');
+  exprInput.type = 'text';
+  exprInput.className = 'expr focustrack';
+  exprInput.placeholder = 'equivalent expression at this step';
+  exprInput.value = exprVal;
+  stepRow.appendChild(exprInput);
+
+  const lawInput = document.createElement('select');
+  lawInput.className = 'law';
+  LAWS.forEach(lawName => {
+    const opt = document.createElement('option');
+    opt.value = lawName === "Select a law..." ? "" : lawName;
+    opt.textContent = lawName;
+    lawInput.appendChild(opt);
+  });
+  if (lawVal) lawInput.value = lawVal;
+  stepRow.appendChild(lawInput);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove';
+  removeBtn.innerHTML = '✕';
+  removeBtn.onclick = () => { row.remove(); renumber(); };
+  stepRow.appendChild(removeBtn);
+
+  row.appendChild(stepRow);
+
+  const status = document.createElement('div');
+  status.className = 'status-line';
+  row.appendChild(status);
+
+  container.appendChild(row);
+  renumber();
+
+  exprInput.addEventListener('focus', () => { lastFocused = exprInput; markActive(exprInput); });
+}
+
+function renumber() {
+  const rows = document.querySelectorAll('.step');
+  rows.forEach((row, i) => {
+    row.querySelector('.num').textContent = '(' + (i + 1) + ')';
+  });
+}
+
+function markActive(el) {
+  document.querySelectorAll('.focustrack').forEach(e => e.classList.remove('active-target'));
+  el.classList.add('active-target');
+}
+
+document.getElementById('goalInput').addEventListener('focus', function() {
+  lastFocused = this;
+  markActive(this);
+});
+
+document.getElementById('addStep').addEventListener('click', () => makeStep());
+
+// Mobile-safe symbol bank. On iOS Safari, preventing ONLY pointerdown is not
+// enough in every webview (Discord/Telegram included). Prevent touchstart itself
+// so the currently focused input never loses focus and the keyboard stays open.
+let lastSelectionStart = 0;
+let lastSelectionEnd = 0;
+
+function rememberSelection(input) {
+  lastFocused = input;
+  lastSelectionStart = input.selectionStart ?? input.value.length;
+  lastSelectionEnd = input.selectionEnd ?? input.value.length;
+}
+
+document.addEventListener('selectionchange', () => {
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('focustrack')) rememberSelection(a);
+});
+
+document.addEventListener('keyup', () => {
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('focustrack')) rememberSelection(a);
+});
+
+function insertSymbol(btn) {
+  if (!btn || !lastFocused) return;
+  const action = btn.getAttribute('data-action');
+  const sym = btn.getAttribute('data-sym');
+  let start = (document.activeElement === lastFocused)
+    ? (lastFocused.selectionStart ?? lastSelectionStart) : lastSelectionStart;
+  let end = (document.activeElement === lastFocused)
+    ? (lastFocused.selectionEnd ?? lastSelectionEnd) : lastSelectionEnd;
+  const val = lastFocused.value;
+
+  if (action === 'backspace') {
+    if (start === end && start > 0) start--;
+    lastFocused.value = val.slice(0, start) + val.slice(end);
+    lastSelectionStart = lastSelectionEnd = start;
+  } else {
+    const text = action === 'space' ? ' ' : sym;
+    if (!text) return;
+    lastFocused.value = val.slice(0, start) + text + val.slice(end);
+    const newPos = start + text.length;
+    lastSelectionStart = lastSelectionEnd = newPos;
+  }
+
+  try { lastFocused.setSelectionRange(lastSelectionStart, lastSelectionEnd); } catch (_) {}
+  lastFocused.dispatchEvent(new Event('input', {bubbles:true}));
+}
+
+const symbolBar = document.getElementById('symbolBar');
+let ignoreMouseUntil = 0;
+
+// Critical iPhone/iPad path: cancel the touch BEFORE Safari/WebView transfers focus.
+symbolBar.addEventListener('touchstart', (e) => {
+  const btn = e.target.closest('.symbol-btn');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  ignoreMouseUntil = Date.now() + 700;
+  insertSymbol(btn);
+}, {passive:false, capture:true});
+
+// Desktop/Android mouse/pointer fallback.
+symbolBar.addEventListener('mousedown', (e) => {
+  const btn = e.target.closest('.symbol-btn');
+  if (!btn) return;
+  e.preventDefault();
+  if (Date.now() < ignoreMouseUntil) return;
+  insertSymbol(btn);
+}, true);
+
+// Never let the synthetic click focus/activate a symbol button afterward.
+symbolBar.addEventListener('click', (e) => {
+  if (e.target.closest('.symbol-btn')) e.preventDefault();
+}, true);
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const goal = document.getElementById('goalInput').value.trim();
+  const rows = document.querySelectorAll('.step');
+  let lines = [];
+  if (goal) lines.push(goal);
+  rows.forEach((row) => {
+    const expr = row.querySelector('.expr').value.trim();
+    const law = row.querySelector('.law').value.trim();
+    if (expr) {
+      lines.push('  ≡ ' + expr + (law ? '      [' + law + ']' : ''));
+    }
+  });
+  const content = document.getElementById('previewContent');
+  content.textContent = lines.length === 0 ? 'Nothing entered yet.' : lines.join('\n');
+});
+
+document.getElementById('checkBtn').addEventListener('click', () => {
+  const overall = document.getElementById('overallResult');
+  overall.className = 'overall-result';
+  overall.textContent = '';
+
+  const goalRaw = document.getElementById('goalInput').value.trim();
+  if (!goalRaw) {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = 'Enter the statement to prove in the top box first.';
+    return;
+  }
+
+  const parts = goalRaw.split('≡');
+  if (parts.length !== 2) {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = 'The statement to prove should contain exactly one ≡ (left side ≡ right side).';
+    return;
+  }
+
+  let goalLeftNode, goalRightNode;
+  try { goalLeftNode = parseExpr(parts[0]); }
+  catch (err) {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = 'Could not parse the left side of the goal: ' + err.message;
+    return;
+  }
+  try { goalRightNode = parseExpr(parts[1]); }
+  catch (err) {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = 'Could not parse the right side of the goal: ' + err.message;
+    return;
+  }
+
+  const stepRows = document.querySelectorAll('.step');
+  if (stepRows.length === 0) {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = 'Add at least one step.';
+    return;
+  }
+
+  let prevNode = goalLeftNode;
+  let prevLabel = 'starting expression (left side of goal)';
+  let allGood = true;
+
+  stepRows.forEach((row, idx) => {
+    const status = row.querySelector('.status-line');
+    const exprStr = row.querySelector('.expr').value.trim();
+    const selectedLaw = row.querySelector('.law').value;
+
+    if (!exprStr) {
+      status.className = 'status-line status-neutral';
+      status.textContent = 'Empty — skipped.';
+      return;
+    }
+
+    let node;
+    try { node = parseExpr(exprStr); }
+    catch (err) {
+      status.className = 'status-line status-bad';
+      status.textContent = '✗ Could not parse this expression: ' + err.message;
+      allGood = false;
+      prevNode = null;
+      return;
+    }
+
+    if (prevNode === null) {
+      status.className = 'status-line status-neutral';
+      status.textContent = 'Skipped (previous step could not be parsed).';
+      return;
+    }
+
+    const result = checkEquivalent(prevNode, node);
+
+    if (!result.equivalent) {
+      status.className = 'status-line status-bad';
+      status.textContent = '✗ NOT equivalent to ' + prevLabel + '. Counterexample: ' +
+        fmtAssign(result.counterexample) + ' → previous = ' + (result.valA ? 'T' : 'F') +
+        ', this step = ' + (result.valB ? 'T' : 'F');
+      allGood = false;
+      prevNode = node;
+      prevLabel = 'step (' + (idx + 1) + ') [unverified chain]';
+      return;
+    }
+
+    // Logically equivalent overall — now check whether the SELECTED law actually justifies it.
+    if (!selectedLaw) {
+      status.className = 'status-line status-neutral';
+      status.textContent = '⚠ Logically equivalent to ' + prevLabel + ', but no law was selected — pick one to fully verify this step.';
+      prevNode = node;
+      prevLabel = 'step (' + (idx + 1) + ')';
+      return;
+    }
+
+    const diff = diffLocate(prevNode, node);
+    let lawOk;
+    if (diff.same) {
+      // expression restated identically; nothing to justify against a law
+      lawOk = true;
+    } else {
+      lawOk = checkLawApplies(selectedLaw, diff.A, diff.B);
+    }
+
+    if (lawOk) {
+      status.className = 'status-line status-ok';
+      status.textContent = '✓ Logically equivalent to ' + prevLabel + ', and ' + selectedLaw + ' correctly justifies this step.';
+      prevNode = node;
+      prevLabel = 'step (' + (idx + 1) + ')';
+    } else {
+      status.className = 'status-line status-bad';
+      status.textContent = '✗ Wrong law selected. The expression is equivalent, but the part that actually changed was "' +
+        nodeToStr(diff.A) + '" → "' + nodeToStr(diff.B) + '", and that is not an application of ' + selectedLaw + '. Double-check which law produces that specific change.';
+      allGood = false;
+      prevNode = node;
+      prevLabel = 'step (' + (idx + 1) + ') [wrong law]';
+    }
+  });
+
+  if (allGood && prevNode) {
+    const finalCheck = checkEquivalent(prevNode, goalRightNode);
+    if (finalCheck.equivalent) {
+      overall.className = 'overall-result overall-ok';
+      overall.textContent = '✓ Proof verified — every step is logically equivalent AND uses the correct law, and the final line matches the right-hand side of the goal.';
+    } else {
+      overall.className = 'overall-result overall-bad';
+      overall.textContent = '✗ All steps check out individually, but your last line does not match the target right-hand side. Counterexample: ' +
+        fmtAssign(finalCheck.counterexample);
+    }
+  } else {
+    overall.className = 'overall-result overall-bad';
+    overall.textContent = '✗ At least one step failed — check the red messages below each step.';
+  }
+});
+
+
+/* ---------- Generated practice mode ---------- */
+const PV=['p','q','r','s','t','u','v','w','x','y'];
+let proofNo=0,lastGoal='',currentDifficulty='hard';
+const v=n=>({type:'var',name:n}), kk=val=>({type:'const',val}), nn=a=>({type:'not',a}), aa=(a,b)=>({type:'and',a,b}), oo=(a,b)=>({type:'or',a,b}), ii=(a,b)=>({type:'imp',a,b});
+const cp=n=>JSON.parse(JSON.stringify(n));
+const rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+function shuf(a){a=a.slice();for(let i=a.length-1;i;i--){let j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function prec(n){return({iff:1,imp:2,xor:3,or:4,and:5,not:6,var:7,const:7})[n.type]||0}
+function ps(n,parent=0){
+ if(n.type==='var')return n.name;if(n.type==='const')return n.val?'T':'F';
+ if(n.type==='not'){let z=ps(n.a);return '¬'+(prec(n.a)<6?'('+z+')':z)}
+ let sy={and:' ∧ ',or:' ∨ ',imp:' → ',iff:' ↔ ',xor:' ⊕ '}[n.type],p=prec(n),z=ps(n.a,p)+sy+ps(n.b,n.type==='imp'?p-1:p);
+ return p<parent?'('+z+')':z
+}
+function sz(n){return ['var','const'].includes(n.type)?1:n.type==='not'?1+sz(n.a):1+sz(n.a)+sz(n.b)}
+function walk(n,path=[]){let z=[{n,path}];if(n.type==='not')z=z.concat(walk(n.a,path.concat('a')));else if(!['var','const'].includes(n.type))z=z.concat(walk(n.a,path.concat('a')),walk(n.b,path.concat('b')));return z}
+function repl(root,path,x){if(!path.length)return cp(x);let c=cp(root),n=c;for(let i=0;i<path.length-1;i++)n=n[path[i]];n[path[path.length-1]]=cp(x);return c}
+function inst(p,bindings){
+ if(p.type==='wild')return cp(bindings[p.id]);
+ if(p.type==='const')return {type:'const',val:p.val};
+ if(p.type==='not')return {type:'not',a:inst(p.a,bindings)};
+ return {type:p.type,a:inst(p.a,bindings),b:inst(p.b,bindings)}
+}
+function rewrites(root){
+ let out=[];
+ for(const w of walk(root))for(const [law,rules] of Object.entries(LAW_RULES))for(const [x,y] of rules){
+  let b={};if(matchPattern(x,w.n,b)){let q=inst(y,b);if(!eq(q,w.n))out.push({node:repl(root,w.path,q),law})}
+  b={};if(matchPattern(y,w.n,b)){let q=inst(x,b);if(!eq(q,w.n))out.push({node:repl(root,w.path,q),law})}
+ }
+ return out
+}
+
+/* ---------- True procedural proof generator v5 ----------
+   Generates a SIMPLE target, then applies valid laws BACKWARDS at random.
+   The resulting expanded expression becomes the question.
+   No fixed question templates are used. */
+const GEN_LAWS = [
+ "Identity law","Domination law","Complement law","Double negation law",
+ "De Morgan's law","Absorption law","Distributive law","Associative law",
+ "Commutative law","Conditional identity","Idempotent law"
+];
+let recentFingerprints=[], recentGoals=[];
+
+function atomPool(){
+ const a=shuf(PV).slice(0,6).map(v);
+ return {a,b:a,T:kk(true),F:kk(false)}
+}
+function shape(n){
+ if(n.type==='var')return 'V';
+ if(n.type==='const')return n.val?'T':'F';
+ if(n.type==='not')return 'N('+shape(n.a)+')';
+ return n.type.toUpperCase()+'('+shape(n.a)+','+shape(n.b)+')'
+}
+function opCount(n){
+ if(['var','const'].includes(n.type))return 0;
+ return 1+(n.type==='not'?opCount(n.a):opCount(n.a)+opCount(n.b))
+}
+function containsConst(n){
+ if(n.type==='const')return true;
+ if(n.type==='var')return false;
+ return n.type==='not'?containsConst(n.a):containsConst(n.a)||containsConst(n.b)
+}
+function randomLeaf(vars, allowConst=true){
+ let pool=vars.slice();
+ if(allowConst){pool.push(kk(true),kk(false))}
+ return cp(pick(pool))
+}
+function randomSimpleTarget(d){
+ const vars=shuf(PV).slice(0,d==='extreme'?5:4).map(v);
+ const roll=Math.random();
+ // Deliberately broad target distribution: atoms, constants, unary, and 1-3 operator results.
+ if(roll<.18)return randomLeaf(vars,true);
+ if(roll<.30)return nn(randomLeaf(vars,false));
+ if(roll<.58)return pick([aa,oo])(randomLeaf(vars,false),randomLeaf(vars,false));
+ if(roll<.76)return pick([aa,oo])(randomLeaf(vars,false),pick([aa,oo])(randomLeaf(vars,false),randomLeaf(vars,false)));
+ if(roll<.88)return ii(randomLeaf(vars,false),randomLeaf(vars,false));
+ if(roll<.95)return {type:'iff',a:randomLeaf(vars,false),b:randomLeaf(vars,false)};
+ return pick([aa,oo])(randomLeaf(vars,true),randomLeaf(vars,true));
+}
+function allReverseMoves(root, d){
+ let out=[];
+ for(const w of walk(root)){
+  for(const [law,rules] of Object.entries(LAW_RULES)){
+   for(const [left,right] of rules){
+    // Both directions are legal; expansion is preferred below, but simplifications
+    // are also allowed to create irregular paths instead of monotonically growing trees.
+    for(const pair of [[left,right],[right,left]]){
+     let bindings={};
+     if(matchPattern(pair[0],w.n,bindings)){
+      // If reverse pattern needs unbound wildcards, synthesize random expressions for them.
+      const wilds=new Set();
+      (function scan(p){if(p.type==='wild')wilds.add(p.id);else if(p.type==='not')scan(p.a);else if(p.a){scan(p.a);scan(p.b)}})(pair[1]);
+      for(const id of wilds)if(!(id in bindings)){
+       const vv=shuf(PV).slice(0,3).map(v);
+       const rr=Math.random();
+       bindings[id]=rr<.55?randomLeaf(vv,false):rr<.78?nn(randomLeaf(vv,false)):pick([aa,oo])(randomLeaf(vv,false),randomLeaf(vv,false));
+      }
+      let replNode;
+      try{replNode=inst(pair[1],bindings)}catch(e){continue}
+      if(eq(replNode,w.n))continue;
+      let whole=repl(root,w.path,replNode);
+      const max=d==='moderate'?18:d==='hard'?30:44;
+      if(opCount(whole)<=max)out.push({node:whole,law,path:w.path,delta:opCount(whole)-opCount(root)});
+     }
+    }
+   }
+  }
+ }
+ return out
+}
+function weightedMove(opts, used, needTF, d){
+ // Remove exact duplicates first.
+ const uniq=[],seen=new Set();
+ for(const o of opts){let k=o.law+'|'+ps(o.node);if(!seen.has(k)){seen.add(k);uniq.push(o)}}
+ opts=uniq;
+ // Avoid repeating the same law over and over.
+ let varied=opts.filter(o=>!used.slice(-2).includes(o.law));
+ if(varied.length)opts=varied;
+ // Encourage constants, but don't force every question to look alike.
+ if(needTF){
+  let tf=opts.filter(o=>containsConst(o.node));
+  if(tf.length&&Math.random()<.72)opts=tf;
+ }
+ // Usually expand when building backwards, occasionally simplify/rearrange.
+ let expanding=opts.filter(o=>o.delta>0);
+ if(expanding.length&&Math.random()<(d==='moderate'?.78:.68))opts=expanding;
+ // Prefer a randomly chosen law family, producing much less deterministic shapes.
+ let available=[...new Set(opts.map(o=>o.law))];
+ if(available.length){
+  let chosenLaw=pick(available);
+  let same=opts.filter(o=>o.law===chosenLaw);
+  if(same.length)opts=same;
+ }
+ return pick(opts)
+}
+function generateProcedural(d){
+ const cfg=d==='moderate'?{min:2,max:4}:d==='hard'?{min:4,max:6}:{min:6,max:9};
+ for(let attempt=0;attempt<180;attempt++){
+  const target=randomSimpleTarget(d);
+  let cur=cp(target), used=[], states=new Set([ps(cur)]);
+  const moves=cfg.min+rnd(cfg.max-cfg.min+1);
+  const wantTF=Math.random()<.68; // ~2/3 of problems involve T/F somewhere
+  for(let i=0;i<moves;i++){
+   let opts=allReverseMoves(cur,d).filter(o=>!states.has(ps(o.node)));
+   if(!opts.length)break;
+   let c=weightedMove(opts,used,wantTF&&!containsConst(cur),d);
+   if(!c)break;
+   cur=c.node;used.push(c.law);states.add(ps(cur));
+  }
+  if(used.length<cfg.min||eq(cur,target))continue;
+  if(wantTF&&!containsConst(cur)&&Math.random()<.8)continue;
+  let valid=false;try{valid=checkEquivalent(cur,target).equivalent}catch(e){}
+  if(!valid)continue;
+  const fp=shape(cur)+'>'+shape(target);
+  if(recentFingerprints.includes(fp))continue;
+  return {start:cur,target,n:used.length,fingerprint:fp,laws:used}
+ }
+ return null
+}
+function emergencyProcedural(d){
+ // Still generated, not a fixed expression: random variable and random constant-law construction.
+ const vars=shuf(PV).slice(0,3).map(v),p=vars[0],q=vars[1];
+ const choices=[
+  {start:oo(aa(p,kk(true)),aa(q,kk(false))),target:p,n:2},
+  {start:aa(oo(p,kk(false)),oo(q,kk(true))),target:p,n:2},
+  {start:nn(nn(oo(p,kk(false)))),target:p,n:3},
+  {start:oo(aa(p,q),aa(p,nn(q))),target:p,n:3}
+ ];
+ return cp(pick(choices))
+}
+function challenge(d){return generateProcedural(d)||emergencyProcedural(d)}
+function newProof(){
+ let d=currentDifficulty,c,g,tries=0;
+ try{
+  do{
+   c=challenge(d);g=ps(c.start)+' ≡ '+ps(c.target);tries++;
+  }while((recentGoals.includes(g)||(c.fingerprint&&recentFingerprints.includes(c.fingerprint)))&&tries<80);
+ }catch(err){
+  console.error('Generator recovery:',err);c=emergencyProcedural(d);g=ps(c.start)+' ≡ '+ps(c.target);
+ }
+ lastGoal=g;recentGoals.push(g);if(recentGoals.length>60)recentGoals.shift();
+ if(c.fingerprint){recentFingerprints.push(c.fingerprint);if(recentFingerprints.length>60)recentFingerprints.shift()}
+ proofNo++;document.getElementById('goalInput').value=g;
+ document.getElementById('stepsContainer').innerHTML='';
+ let boxes=Math.min(13,Math.max(4,c.n+(d==='extreme'?3:2)));
+ for(let i=0;i<boxes;i++)makeStep();
+ document.getElementById('overallResult').className='overall-result';
+ document.getElementById('overallResult').textContent='';
+ document.getElementById('previewContent').textContent='Nothing yet — solve the generated proof, then click "Show full proof".';
+ document.getElementById('difficultyBadge').textContent=d[0].toUpperCase()+d.slice(1);
+ document.getElementById('proofCounter').textContent='Problem #'+proofNo;
+ lastFocused=document.querySelector('.step input.expr');if(lastFocused)markActive(lastFocused)
+}
+document.getElementById('rerollBtn').addEventListener('click',newProof);
+document.querySelectorAll('.difficulty-btn').forEach(btn=>{
+ btn.addEventListener('click',()=>{
+  currentDifficulty=btn.dataset.difficulty;
+  document.querySelectorAll('.difficulty-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  newProof();
+ });
+});
+newProof();
+
+</script>
+</body>
+</html>
